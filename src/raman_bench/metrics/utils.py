@@ -13,7 +13,7 @@ from raman_bench.metrics.regression import RegressionMetrics
 def compute_metrics(
     y_true: np.ndarray,
     y_pred: np.ndarray,
-    task_type: str = "classification",
+    task_type: str = TASK_TYPE.Classification,
     y_proba: Optional[np.ndarray] = None,
     **kwargs,
 ) -> Dict[str, float]:
@@ -30,10 +30,10 @@ def compute_metrics(
     Returns:
         Dictionary of metric names to values
     """
-    if task_type.lower() == "classification":
+    if task_type == TASK_TYPE.Classification:
         calculator = ClassificationMetrics(**kwargs)
         return calculator.compute_all(y_true, y_pred, y_proba)
-    elif task_type.lower() == "regression":
+    elif task_type == TASK_TYPE.Regression:
         calculator = RegressionMetrics()
         return calculator.compute_all(y_true, y_pred)
     else:

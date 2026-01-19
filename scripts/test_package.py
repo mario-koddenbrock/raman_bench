@@ -115,10 +115,10 @@ def main():
     all_models = list_models()
     logger.info(f"Total models registered: {len(all_models)}")
 
-    classification_models = list_models(task_type="classification")
+    classification_models = list_models(task_type=TASK_TYPE.Classification)
     logger.info(f"Classification models: {len(classification_models)}")
 
-    regression_models = list_models(task_type="regression")
+    regression_models = list_models(task_type=TASK_TYPE.Regression)
     logger.info(f"Regression models: {len(regression_models)}")
 
     logger.info("\n" + "=" * 50)

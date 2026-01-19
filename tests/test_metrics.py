@@ -114,7 +114,7 @@ class TestComputeMetrics:
         y_true = np.array([0, 1, 0, 1])
         y_pred = np.array([0, 1, 1, 1])
 
-        metrics = compute_metrics(y_true, y_pred, task_type="classification")
+        metrics = compute_metrics(y_true, y_pred, task_type=TASK_TYPE.Classification)
 
         assert "accuracy" in metrics
         assert "f1_score" in metrics
@@ -124,7 +124,7 @@ class TestComputeMetrics:
         y_true = np.array([1.0, 2.0, 3.0])
         y_pred = np.array([1.1, 2.0, 3.2])
 
-        metrics = compute_metrics(y_true, y_pred, task_type="regression")
+        metrics = compute_metrics(y_true, y_pred, task_type=TASK_TYPE.Regression)
 
         assert "mse" in metrics
         assert "r2" in metrics

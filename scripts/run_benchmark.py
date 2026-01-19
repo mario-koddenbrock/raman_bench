@@ -40,7 +40,8 @@ def main():
     parser.add_argument(
         "--config",
         type=str,
-        help="Path to configuration YAML file",
+        default="configs/minimal.yaml",
+        help="Path to configuration YAML file (default: configs/minimal.yaml)",
     )
     parser.add_argument(
         "--step",
@@ -56,13 +57,16 @@ def main():
     )
 
     args = parser.parse_args()
+    logger.info(f"Running benchmark with configuration: {args.config}")
     config = load_config(args.config)
 
     config["output_dir"] = args.output
     os.makedirs(config["output_dir"], exist_ok=True)
+    logger.info(f"Output directory: {config['output_dir']}")
 
     n_classification = config.get("n_classification_datasets", 0)
     n_regression = config.get("n_regression_datasets", 0)
+    logger.info(f"Datasets: {n_classification} classification, {n_regression} regression")
 
     if n_classification == -1:
         config["classification_datasets"] = raman_data(task_type=TASK_TYPE.Classification)
@@ -92,9 +96,7 @@ def main():
     if args.step in ["all", "plots"]:
         generate_plots_from_metrics(config)
 
-    logger.info("\n" + "=" * 60)
-    logger.info("BENCHMARK COMPLETE")
-    logger.info("=" * 60)
+    logger.info("\n" + "=" * 60 + "\nBENCHMARK COMPLETE")
     logger.info(f"Results saved to: {config['output_dir']}")
 
     return 0

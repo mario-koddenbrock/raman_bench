@@ -10,9 +10,7 @@ from raman_bench.plotting import BenchmarkPlotter
 logger = logging.getLogger(__name__)
 
 def generate_plots_from_metrics(config):
-    logger.info("\n" + "=" * 60)
-    logger.info("STEP 3: Generating Plots")
-    logger.info("=" * 60)
+    logger.info("\n" + "=" * 60 + "\nSTEP 3: Generating Plots")
     output_dir = config["output_dir"]
     metrics_dir = os.path.join(output_dir, "metrics")
     plots_dir = os.path.join(output_dir, "plots")
@@ -27,7 +25,7 @@ def generate_plots_from_metrics(config):
     metrics_df = pd.read_csv(metrics_file)
     plotter = BenchmarkPlotter(dpi=150, save_format="png")
     classification_metrics = ["accuracy", "f1_score", "precision", "recall", "roc_auc"]
-    classification_df = metrics_df[metrics_df["task_type"] == "classification"]
+    classification_df = metrics_df[metrics_df["task_type"] == TASK_TYPE.Classification]
     if not classification_df.empty:
         logger.info("\nGenerating classification plots...")
         clf_plots_dir = os.path.join(plots_dir, "classification")

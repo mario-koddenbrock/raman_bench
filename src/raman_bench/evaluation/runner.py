@@ -195,7 +195,7 @@ class BenchmarkRunner:
         all_y_proba = []
 
         # Select CV strategy
-        if dataset.task_type == "classification":
+        if dataset.task_type == TASK_TYPE.Classification:
             cv = StratifiedKFold(
                 n_splits=self.cv_folds,
                 shuffle=True,

@@ -14,15 +14,15 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 def compute_predictions(config):
-    logger.info("\n" + "=" * 60)
-    logger.info("STEP 1: Computing Predictions")
-    logger.info("=" * 60)
+    logger.info("\n" + "=" * 60 + "\nSTEP 1: Computing Predictions")
     output_dir = config["output_dir"]
     predictions_dir = os.path.join(output_dir, "predictions")
     os.makedirs(predictions_dir, exist_ok=True)
+
     pipeline = get_preprocessing_pipeline(config.get("preprocessing", "default"))
     classification_datasets = config.get("classification_datasets", [])
     classification_models = config.get("classification_models", [])
+
     if classification_datasets and classification_models:
         logger.info("\n--- Classification Tasks ---")
         _compute_predictions_for_task(
@@ -33,6 +33,7 @@ def compute_predictions(config):
             pipeline=pipeline,
             predictions_dir=predictions_dir,
         )
+
     regression_datasets = config.get("regression_datasets", [])
     regression_models = config.get("regression_models", [])
     if regression_datasets and regression_models:
@@ -56,7 +57,7 @@ def _compute_predictions_for_task(datasets, model_configs, task_type, config, pi
         dataset = raman_data(dataset_name)
         if pipeline is not None:
             dataset = pipeline.transform_dataset(dataset)
-        if task_type == "classification":
+        if task_type == TASK_TYPE.Classification:
             cv = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=random_state)
             split_gen = cv.split(dataset.spectra, dataset.targets)
         else:
@@ -68,8 +69,10 @@ def _compute_predictions_for_task(datasets, model_configs, task_type, config, pi
             pbar.set_description(f"{dataset_name} | {model_name}")
             all_predictions = []
             for fold_idx, (train_idx, test_idx) in enumerate(fold_indices):
-                X_train, X_test = dataset.spectra[train_idx], dataset.spectra[test_idx]
+
+                X_train, X_test = dataset.spectra[:, train_idx], dataset.spectra[:, test_idx]
                 y_train, y_test = dataset.targets[train_idx], dataset.targets[test_idx]
+
                 model = create_model(model_config)
                 model.fit(X_train, y_train)
                 y_pred = model.predict(X_test)

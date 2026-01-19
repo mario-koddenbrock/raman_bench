@@ -43,7 +43,7 @@ pip install -e .
 from raman_bench import BenchmarkRunner, get_model, list_models
 
 # List available models
-print(list_models(task_type="classification"))
+print(list_models(task_type=TASK_TYPE.Classification))
 
 # Create models (default and tuned versions)
 model_default = get_model("randomforest")  # Default hyperparameters

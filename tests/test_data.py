@@ -22,13 +22,13 @@ class TestRamanDataset:
             data=data,
             spectra=spectra,
             target=target,
-            task_type="classification",
+            task_type=TASK_TYPE.Classification,
         )
 
         assert dataset.n_samples == 100
         assert dataset.n_features == 500
         assert dataset.n_classes == 3
-        assert dataset.task_type == "classification"
+        assert dataset.task_type == TASK_TYPE.Classification
 
     def test_dataset_validation(self):
         """Test dataset validation raises error on mismatch."""

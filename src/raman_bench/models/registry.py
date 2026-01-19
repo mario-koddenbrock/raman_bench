@@ -80,7 +80,7 @@ def list_models(task_type: Optional[str] = None, include_tuned: bool = False) ->
     return sorted(set(models))
 
 
-def get_all_models(task_type: str = "classification", include_tuned: bool = True) -> List[BaseModel]:
+def get_all_models(task_type: TASK_TYPE = TASK_TYPE.Classification, include_tuned: bool = True) -> List[BaseModel]:
     """
     Get instances of all registered models for a task type.
 

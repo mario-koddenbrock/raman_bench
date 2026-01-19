@@ -25,7 +25,7 @@ class BaseModel(ABC):
     def __init__(
         self,
         name: str,
-        task_type: str = "classification",
+        task_type: str = TASK_TYPE.Classification,
         tuned: bool = False,
         n_trials: int = 50,
         validation_split: float = 0.2,
@@ -128,7 +128,7 @@ class BaseModel(ABC):
         optuna.logging.set_verbosity(optuna.logging.WARNING)
 
         # Split data for validation
-        stratify = y if self.task_type == "classification" else None
+        stratify = y if self.task_type == TASK_TYPE.Classification else None
         X_train, X_val, y_train, y_val = train_test_split(
             X, y,
             test_size=self.validation_split,
@@ -147,7 +147,7 @@ class BaseModel(ABC):
             # Evaluate
             y_pred = model.predict(X_val)
 
-            if self.task_type == "classification":
+            if self.task_type == TASK_TYPE.Classification:
                 from sklearn.metrics import accuracy_score
                 return accuracy_score(y_val, y_pred)
             else:
@@ -256,7 +256,7 @@ class ClassificationModel(BaseModel):
 
     def __init__(self, name: str, tuned: bool = False, **kwargs):
         """Initialize classification model."""
-        super().__init__(name=name, task_type="classification", tuned=tuned, **kwargs)
+        super().__init__(name=name, task_type=TASK_TYPE.Classification, tuned=tuned, **kwargs)
 
 
 class RegressionModel(BaseModel):
@@ -264,5 +264,5 @@ class RegressionModel(BaseModel):
 
     def __init__(self, name: str, tuned: bool = False, **kwargs):
         """Initialize regression model."""
-        super().__init__(name=name, task_type="regression", tuned=tuned, **kwargs)
+        super().__init__(name=name, task_type=TASK_TYPE.Regression, tuned=tuned, **kwargs)
 
