@@ -2,6 +2,7 @@
 Benchmark runner for evaluating models on Raman spectroscopy datasets.
 """
 
+import logging
 import os
 import time
 from datetime import datetime
@@ -16,6 +17,8 @@ from raman_bench.models.base import BaseModel
 from raman_bench.plotting import BenchmarkPlotter
 from raman_bench.preprocessing import PreprocessingPipeline, get_default_pipeline
 from raman_data import RamanDataset
+
+logger = logging.getLogger(__name__)
 
 
 class BenchmarkRunner:
@@ -113,15 +116,15 @@ class BenchmarkRunner:
 
         for dataset_name in self.datasets:
             if self.verbose:
-                print(f"\n{'='*60}")
-                print(f"Dataset: {dataset_name}")
-                print(f"{'='*60}")
+                logger.info(f"\n{'='*60}")
+                logger.info(f"Dataset: {dataset_name}")
+                logger.info(f"{'='*60}")
 
             # Load dataset
             try:
                 dataset = self.data_handler.load_dataset(dataset_name)
             except Exception as e:
-                print(f"Failed to load dataset {dataset_name}: {e}")
+                logger.error(f"Failed to load dataset {dataset_name}: {e}")
                 continue
 
             # Apply preprocessing
@@ -154,7 +157,7 @@ class BenchmarkRunner:
                         )
 
                 except Exception as e:
-                    print(f"Error evaluating {model.name} on {dataset_name}: {e}")
+                    logger.error(f"Error evaluating {model.name} on {dataset_name}: {e}")
                     import traceback
                     traceback.print_exc()
 

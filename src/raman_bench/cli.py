@@ -5,6 +5,10 @@ Command-line interface for Raman Bench.
 import argparse
 import sys
 from typing import List, Optional
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 def main(args: Optional[List[str]] = None) -> int:
@@ -157,7 +161,7 @@ def run_benchmark(args) -> int:
     results = runner.run()
 
     # Print summary
-    print("\n" + runner.summary())
+    logger.info("\n" + runner.summary())
 
     # Generate plots
     runner.generate_plots()
@@ -180,7 +184,7 @@ def generate_plots(args) -> int:
         if os.path.exists(metrics_file):
             metrics_df = pd.read_csv(metrics_file)
         else:
-            print(f"Could not find results file at {args.results}")
+            logger.error(f"Could not find results file at {args.results}")
             return 1
 
     # Create plotter and generate report
@@ -191,7 +195,7 @@ def generate_plots(args) -> int:
         metrics=args.metrics,
     )
 
-    print(f"Plots saved to {args.output}")
+    logger.info(f"Plots saved to {args.output}")
     return 0
 
 
@@ -201,19 +205,18 @@ def list_resources(args) -> int:
         from raman_bench.data import DataHandler
         handler = DataHandler()
         datasets = handler.list_datasets(task_type=args.task_type)
-        print(f"Available datasets ({len(datasets)}):")
+        logger.info(f"Available datasets ({len(datasets)}):")
         for ds in datasets:
-            print(f"  - {ds}")
+            logger.info(f"  - {ds}")
     elif args.resource == "models":
         from raman_bench.models import list_models
         models = list_models(task_type=args.task_type)
-        print(f"Available models ({len(models)}):")
+        logger.info(f"Available models ({len(models)}):")
         for model in models:
-            print(f"  - {model}")
+            logger.info(f"  - {model}")
 
     return 0
 
 
 if __name__ == "__main__":
     sys.exit(main())
-
