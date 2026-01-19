@@ -5,7 +5,6 @@ This package provides tools for benchmarking machine learning models on Raman sp
 including data handling, preprocessing, model implementations, metrics, and visualization.
 """
 
-from raman_bench.data import DataHandler, RamanDataset
 from raman_bench.evaluation import BenchmarkRunner
 from raman_bench.metrics import ClassificationMetrics, RegressionMetrics
 from raman_bench.models import get_model, list_models
@@ -16,8 +15,6 @@ __version__ = "0.1.0"
 __author__ = "Mario Koddenbrock (HTW Berlin), Christoph Lange (TU Berlin)"
 
 __all__ = [
-    "DataHandler",
-    "RamanDataset",
     "BenchmarkRunner",
     "ClassificationMetrics",
     "RegressionMetrics",
