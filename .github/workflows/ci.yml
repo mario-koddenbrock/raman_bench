@@ -21,6 +21,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Debug paths
+        run: |
+          pwd
+          ls -la
+          ls -la src
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
