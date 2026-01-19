@@ -26,6 +26,7 @@ from raman_bench.benchmark.predictions import compute_predictions
 from raman_bench.benchmark.metrics import compute_metrics_from_predictions
 from raman_bench.benchmark.plotting import generate_plots_from_metrics
 from raman_bench.benchmark.utils import check_config
+from raman_data import raman_data, TASK_TYPE
 
 logger = logging.getLogger(__name__)
 
@@ -53,52 +54,16 @@ def main():
         default="results",
         help="Output directory (default: results)",
     )
-    parser.add_argument(
-        "--datasets",
-        nargs="+",
-        help="Dataset names to evaluate (overrides config)",
-    )
-    parser.add_argument(
-        "--models",
-        nargs="+",
-        help="Model names to evaluate (overrides config)",
-    )
-    parser.add_argument(
-        "--cv-folds",
-        type=int,
-        default=5,
-        help="Number of cross-validation folds (default: 5)",
-    )
-    parser.add_argument(
-        "--random-state",
-        type=int,
-        default=42,
-        help="Random seed (default: 42)",
-    )
-    parser.add_argument(
-        "--preprocessing",
-        choices=["default", "minimal", "robust", "none"],
-        default="default",
-        help="Preprocessing pipeline to use (default: default)",
-    )
+
     args = parser.parse_args()
     config = load_config(args.config)
+
     config["output_dir"] = args.output
-    config["cv_folds"] = args.cv_folds
-    config["random_state"] = args.random_state
-    config["preprocessing"] = args.preprocessing
-    if args.datasets:
-        config["classification_datasets"] = args.datasets
-        config["regression_datasets"] = []
-    if args.models:
-        config["classification_models"] = [
-            {"name": m, "class": f"{m}Model" if not m.endswith("Model") else m, "params": {}}
-            for m in args.models
-        ]
     os.makedirs(config["output_dir"], exist_ok=True)
+
     n_classification = config.get("n_classification_datasets", 0)
     n_regression = config.get("n_regression_datasets", 0)
-    from raman_data import raman_data, TASK_TYPE
+
     if n_classification == -1:
         config["classification_datasets"] = raman_data(task_type=TASK_TYPE.Classification)
     elif n_classification > 0:
@@ -106,6 +71,7 @@ def main():
         config["classification_datasets"] = all_classification[:n_classification]
     else:
         config["classification_datasets"] = []
+
     if n_regression == -1:
         config["regression_datasets"] = raman_data(task_type=TASK_TYPE.Regression)
     elif n_regression > 0:
@@ -113,18 +79,24 @@ def main():
         config["regression_datasets"] = all_regression[:n_regression]
     else:
         config["regression_datasets"] = []
+
     if not check_config(config):
         raise ValueError("No datasets to evaluate. Please check your configuration.")
+
     if args.step in ["all", "predictions"]:
         compute_predictions(config)
+
     if args.step in ["all", "metrics"]:
         compute_metrics_from_predictions(config)
+
     if args.step in ["all", "plots"]:
         generate_plots_from_metrics(config)
+
     logger.info("\n" + "=" * 60)
     logger.info("BENCHMARK COMPLETE")
     logger.info("=" * 60)
     logger.info(f"Results saved to: {config['output_dir']}")
+
     return 0
 
 if __name__ == "__main__":
