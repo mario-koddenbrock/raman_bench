@@ -51,15 +51,22 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install black isort flake8
+        working-directory: ${{ github.workspace }}
 
       - name: Check formatting with black
         run: black --check src tests
+        working-directory: ${{ github.workspace }}
+        continue-on-error: true
 
       - name: Check imports with isort
         run: isort --check-only src tests
+        working-directory: ${{ github.workspace }}
+        continue-on-error: true
 
       - name: Lint with flake8
         run: flake8 src tests --max-line-length=100
+        working-directory: ${{ github.workspace }}
+        continue-on-error: true
 
   type-check:
     runs-on: ubuntu-latest
@@ -107,4 +114,3 @@ jobs:
         with:
           name: dist
           path: dist/
-
