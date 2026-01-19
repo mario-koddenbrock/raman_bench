@@ -57,12 +57,14 @@ def _compute_predictions_for_task(datasets, model_configs, task_type, config, pi
         dataset = raman_data(dataset_name)
         if pipeline is not None:
             dataset = pipeline.transform_dataset(dataset)
+
         if task_type == TASK_TYPE.Classification:
             cv = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=random_state)
-            split_gen = cv.split(dataset.spectra, dataset.targets)
+            split_gen = cv.split(dataset.spectra.T, dataset.targets)
         else:
             cv = KFold(n_splits=cv_folds, shuffle=True, random_state=random_state)
-            split_gen = cv.split(dataset.spectra)
+            split_gen = cv.split(dataset.spectra.T)
+
         fold_indices = list(split_gen)
         for model_config in model_configs:
             model_name = model_config["name"]

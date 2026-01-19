@@ -8,12 +8,13 @@ import numpy as np
 
 from raman_bench.metrics.classification import ClassificationMetrics
 from raman_bench.metrics.regression import RegressionMetrics
+from raman_data import TASK_TYPE
 
 
 def compute_metrics(
     y_true: np.ndarray,
     y_pred: np.ndarray,
-    task_type: str = TASK_TYPE.Classification,
+    task_type: TASK_TYPE = TASK_TYPE.Classification,
     y_proba: Optional[np.ndarray] = None,
     **kwargs,
 ) -> Dict[str, float]:

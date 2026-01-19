@@ -18,13 +18,14 @@ Usage:
 """
 
 import argparse
+import logging
 import os
 import sys
-import logging
-from raman_bench.benchmark.config import load_config, DEFAULT_CONFIG
-from raman_bench.benchmark.predictions import compute_predictions
+
+from raman_bench.benchmark.config import load_config
 from raman_bench.benchmark.metrics import compute_metrics_from_predictions
 from raman_bench.benchmark.plotting import generate_plots_from_metrics
+from raman_bench.benchmark.predictions import compute_predictions
 from raman_bench.benchmark.utils import check_config
 from raman_data import raman_data, TASK_TYPE
 

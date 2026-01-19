@@ -9,6 +9,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
+from raman_data import TASK_TYPE
+
 
 class BaseModel(ABC):
     """
@@ -25,7 +27,7 @@ class BaseModel(ABC):
     def __init__(
         self,
         name: str,
-        task_type: str = TASK_TYPE.Classification,
+        task_type: TASK_TYPE = TASK_TYPE.Classification,
         tuned: bool = False,
         n_trials: int = 50,
         validation_split: float = 0.2,

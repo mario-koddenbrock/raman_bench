@@ -9,9 +9,8 @@ from raman_bench.preprocessing import (
     PreprocessingPipeline,
     get_default_pipeline,
     get_minimal_pipeline,
-    get_robust_pipeline,
 )
-from raman_bench.data import RamanDataset
+from raman_data import RamanDataset
 
 
 class TestPreprocessingPipeline:
@@ -92,13 +91,13 @@ class TestDatasetTransform:
         np.random.seed(42)
         data = np.abs(np.random.randn(10, 100)) + 1
         spectra = np.linspace(400, 2000, 100)
-        target = np.random.choice([0, 1], 10)
+        targets = np.random.choice([0, 1], 10)
 
         return RamanDataset(
             name="test",
             data=data,
             spectra=spectra,
-            target=target,
+            targets=targets,
         )
 
     def test_transform_dataset_preserves_target(self, sample_dataset):

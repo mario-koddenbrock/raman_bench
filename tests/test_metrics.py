@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from raman_bench.metrics import ClassificationMetrics, RegressionMetrics, compute_metrics
+from raman_data import TASK_TYPE
 
 
 class TestClassificationMetrics:

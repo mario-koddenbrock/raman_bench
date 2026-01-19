@@ -7,6 +7,7 @@ Provides functions to register, retrieve, and list available models.
 from typing import Any, Dict, List, Optional, Type
 
 from raman_bench.models.base import BaseModel
+from raman_data import TASK_TYPE
 
 # Global model registry
 _MODEL_REGISTRY: Dict[str, Type[BaseModel]] = {}
