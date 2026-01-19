@@ -17,6 +17,7 @@ torch>=2.0
 xgboost>=1.7
 lightgbm>=3.3
 catboost>=1.2
+scikit-learn==1.7.2
 
 # AutoML and advanced models
 autogluon.tabular>=1.0
