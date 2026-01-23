@@ -209,6 +209,48 @@ classification_models:
       n_trials: 50
 ```
 
+## Detailed description: Dataset handling and `RamanBenchmark`
+
+`RamanBench` ships with a small dataset utility class called `RamanBenchmark` that
+encapsulates the common dataset preparation steps used by the benchmark runner.
+The class lives in `src/raman_bench/benchmark/dataset.py` and is intended to
+provide a reproducible, cache-friendly interface for loading many small
+spectroscopy datasets and iterating over their train/test splits.
+
+What `RamanBenchmark` does
+
+- Discovers datasets via the `raman_data` package by task type (classification
+  or regression) and selects a configurable subset.
+- Loads raw dataset objects from `raman_data`, optionally applies a preprocessing
+  pipeline from `raman_bench.benchmark.preprocessing`, and converts the result
+  into pandas DataFrames.
+- Splits each dataset into train/test using `sklearn.model_selection.train_test_split`.
+- Persists the resulting splits to simple on-disk numpy cache files (`.npy`) and
+  maintains a small `index.json` mapping dataset names to their target counts to
+  speed up subsequent runs.
+
+Why this is useful
+
+Benchmarks often iterate many dataset/model combinations. Preprocessing and
+conversion to DataFrames can be expensive, especially for multi-target datasets
+or when the preprocessing pipeline includes smoothing / baseline correction.
+By caching prepared train/test splits, `RamanBenchmark` eliminates repeated
+preprocessing work and makes experiments reproducible across runs and machines.
+
+Quick usage
+
+```python
+from raman_bench.benchmark.dataset import RamanBenchmark
+
+# Create a benchmark helper for the two first classification datasets
+bench = RamanBenchmark(n_classification=2, n_regression=0, cache_dir='.cache')
+
+# Iterate prepared splits
+for i in range(len(bench)):
+    train_df, test_df = bench[i]
+    # train_df and test_df are pandas DataFrames ready to feed into models
+```
+
 ## Contributing
 
 Contributions are welcome! Please see our contributing guidelines.
@@ -234,4 +276,3 @@ If you use Raman Bench in your research, please cite:
   url = {https://github.com/raman-bench/raman_bench}
 }
 ```
-
