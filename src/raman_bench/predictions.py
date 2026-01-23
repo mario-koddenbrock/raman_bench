@@ -25,20 +25,28 @@ def compute_predictions(config):
     benchmark = configure_benchmark(config)
     benchmark.init_datasets()
 
-    model_configs = config["model_configs"]
+    models = config["models"]
     autogluon_time_limit = config["autogluon_time_limit"]
     autogluon_presets = config["autogluon_presets"]
 
-    pbar = tqdm(total=len(benchmark)*len(model_configs))
+    pbar = tqdm(total=len(benchmark)*len(models))
 
     for data_train, data_test, key, task_type in benchmark:
-        for model_config in model_configs:
+        for model_name in models:
 
-            model_name = model_config["name"]
+            if "all" in model_name:
+                models_to_run = [
+                    "LGBModel", "CatBoostModel", "XGBoostModel", "RealMLPModel", "TabMModel", "MitraModel", "TabICLModel", "TabPFNV2Model", "RFModel", "XTModel", "KNNModel", "LinearModel", "TabularNeuralNetTorchModel", "NNFastAiTabularModel"
+                ]
+            else:
+                models_to_run = [model_name]
+
             pbar.set_description(f"{key} | {model_name}")
 
             model = AutoGluonModel(
-                model_config=model_config,
+                ensemble=True,
+                optimize=True,
+                models=models_to_run,
                 task_type=task_type,
                 autogluon_time_limit=autogluon_time_limit,
                 autogluon_presets=autogluon_presets,
