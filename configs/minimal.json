@@ -1,0 +1,18 @@
+{
+  "n_classification": 1,
+  "n_regression": 1,
+  "test_size": 0.2,
+  "random_state": 42,
+  "preprocessing": false,
+  "augmentation": false,
+  "cache_dir": ".cache",
+  "output_dir": "results/test",
+  "model_configs": [
+    {
+    "name": "test",
+    "hyperparameters": {}
+    }
+  ],
+  "autogluon_time_limit": 500,
+  "autogluon_presets": "best_quality"
+}
