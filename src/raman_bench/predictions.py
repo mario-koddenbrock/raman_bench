@@ -6,9 +6,8 @@ import os
 
 from tqdm import tqdm
 
-from raman_bench.benchmark import RamanBenchmark
+from raman_bench.benchmark import RamanBenchmark, configure_benchmark
 from raman_bench.model import AutoGluonModel
-from raman_data import TASK_TYPE
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -20,23 +19,11 @@ def compute_predictions(config):
     predictions_dir = os.path.join(output_dir, "predictions")
     os.makedirs(predictions_dir, exist_ok=True)
 
-    n_classification = config["n_classification"]
-    n_regression = config["n_regression"]
-    test_size = config["test_size"]
-    random_state = config["random_state"]
-    preprocessing = config["preprocessing"]
-    augmentation = config["augmentation"]
     cache_dir = config["cache_dir"]
+    os.makedirs(cache_dir, exist_ok=True)
 
-    benchmark = RamanBenchmark(
-        n_classification=n_classification,
-        n_regression=n_regression,
-        test_size=test_size,
-        random_state=random_state,
-        preprocessing=preprocessing,
-        augmentation=augmentation,
-        cache_dir=cache_dir,
-    )
+    benchmark = configure_benchmark(config)
+    benchmark.init_datasets()
 
     model_configs = config["model_configs"]
     autogluon_time_limit = config["autogluon_time_limit"]
