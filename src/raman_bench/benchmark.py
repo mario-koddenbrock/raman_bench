@@ -13,11 +13,12 @@ import os
 from typing import Tuple, List, Dict
 
 import numpy as np
+import pandas as pd
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
-from raman_bench.benchmark.preprocessing import get_preprocessing_pipeline, handle_missing_values
+from raman_bench.preprocessing import get_preprocessing_pipeline
 from raman_data import raman_data, TASK_TYPE
 
 logger = logging.getLogger(__name__)
@@ -93,8 +94,8 @@ class RamanBenchmark:
             n_regression: int = 1,
             test_size: float = 0.2,
             random_state: int = 42,
-            preprocessing: str = "default",
-            augmentation: bool = True,
+            preprocessing: bool = False,
+            augmentation: bool = False,
             cache_dir: str = ".cache",
     ):
 
@@ -110,7 +111,8 @@ class RamanBenchmark:
             self.dataset_names_classification = raman_data(task_type=TASK_TYPE.Classification)
         elif n_classification > 0:
             all_classification = raman_data(task_type=TASK_TYPE.Classification)
-            self.dataset_names_classification = all_classification[:n_classification]
+            # self.dataset_names_classification = all_classification[:n_classification]
+            self.dataset_names_classification = [all_classification[-1]] # TODO
 
         self.dataset_names_regression = []
         if n_regression == -1:
@@ -119,11 +121,16 @@ class RamanBenchmark:
             all_regression = raman_data(task_type=TASK_TYPE.Regression)
             self.dataset_names_regression = all_regression[:n_regression]
 
+        self.preprocessing = preprocessing
+        self.preprocessing_pipeline = get_preprocessing_pipeline()
 
-        self.preprocessing = get_preprocessing_pipeline(preprocessing)
         self.augmentation = augmentation
         self.cache_dir = cache_dir
+        os.makedirs(cache_dir, exist_ok=True)
+
         self.key_list = []
+        self.task_type_list = []
+
         self.index_file = os.path.join(cache_dir, "index.json")
         self.index:Dict[str, int] = self.load_index()
         self.init_datasets()
@@ -138,7 +145,7 @@ class RamanBenchmark:
         """
         return len(self.key_list)
 
-    def __getitem__(self, idx: int) -> Tuple[DataFrame, DataFrame]:
+    def __getitem__(self, idx: int) -> Tuple[DataFrame, DataFrame, str, TASK_TYPE]:
         """Return the (train, test) DataFrame pair for the given index.
 
         The index corresponds to entries in ``self.key_list``. If the dataset
@@ -156,6 +163,7 @@ class RamanBenchmark:
             Tuple containing (train_dataframe, test_dataframe).
         """
         key = self.key_list[idx]
+        task_type = self.task_type_list[idx]
         if self.has_dataset_in_cache(key):
             data_train, data_test = self.load_dataset_from_cache(key)
         else:
@@ -163,7 +171,7 @@ class RamanBenchmark:
             data_train, data_test = self.load_dataset_from_key(key)
             self.save_dataset(key, data_train, data_test)
             logger.warning(f"Dataset {key} already in cache.")
-        return data_train, data_test
+        return data_train, data_test, key, task_type
 
 
     @staticmethod
@@ -173,6 +181,7 @@ class RamanBenchmark:
         The returned format is ``"{dataset_name}_{target_idx}"`` and is used to
         identify and cache specific target columns from multi-target datasets.
         """
+        dataset_name = dataset_name.replace("/", "_").replace("\\", "_")
         return f"{dataset_name}_{target_idx}"
 
     @staticmethod
@@ -185,7 +194,9 @@ class RamanBenchmark:
             If the key cannot be split into the expected two parts using
             underscore delimiting.
         """
-        dataset_name, target_idx = key.split("_")
+        splits = key.split("_")
+        dataset_name = "_".join(splits[:-1])
+        target_idx = splits[-1]
         return dataset_name, int(target_idx)
 
     def load_index(self) -> Dict[str, int]:
@@ -214,9 +225,11 @@ class RamanBenchmark:
         """
         self.load_datasets(self.dataset_names_classification)
         self.load_datasets(self.dataset_names_regression)
+
         for dataset_name in self.dataset_names_classification + self.dataset_names_regression:
             for target_idx in range(self.index[dataset_name]):
                 self.key_list.append(self.get_key(dataset_name, target_idx))
+                self.task_type_list.append(TASK_TYPE.Classification if dataset_name in self.dataset_names_classification else TASK_TYPE.Regression)
 
 
     def get_cache_file_paths(self, key: str) -> Tuple[str, str]:
@@ -226,7 +239,7 @@ class RamanBenchmark:
         -------
         (train_path, test_path)
         """
-        return f"{self.cache_dir}/{key}_train.npy", f"{self.cache_dir}/{key}_test.npy"
+        return f"{self.cache_dir}/{key}_train.pkl", f"{self.cache_dir}/{key}_test.pkl"
 
     def save_dataset(self, key: str, data_train: DataFrame, data_test: DataFrame):
         """Save train/test split to disk as numpy files using allow_pickle=True.
@@ -235,8 +248,8 @@ class RamanBenchmark:
         will need to be interpreted back into DataFrames by callers.
         """
         cache_file_train, cache_file_test = self.get_cache_file_paths(key)
-        np.save(cache_file_train, data_train, allow_pickle=True)
-        np.save(cache_file_test, data_test, allow_pickle=True)
+        data_train.to_pickle(cache_file_train)
+        data_test.to_pickle(cache_file_test)
 
     def load_dataset_from_cache(self, key: str) -> Tuple[DataFrame, DataFrame]:
         """Load a previously cached train/test split from disk and return it.
@@ -248,8 +261,8 @@ class RamanBenchmark:
             test splits.
         """
         cache_file_train, cache_file_test = self.get_cache_file_paths(key)
-        data_train = np.load(cache_file_train, allow_pickle=True)
-        data_test = np.load(cache_file_test, allow_pickle=True)
+        data_train = pd.read_pickle(cache_file_train)
+        data_test = pd.read_pickle(cache_file_test)
         return data_train, data_test
 
     def has_dataset_in_cache(self, key: str) -> bool:
@@ -280,8 +293,8 @@ class RamanBenchmark:
         if self.augmentation:
             print("Data augmentation not yet implemented.")
 
-        if self.preprocessing is not None:
-            dataset = self.preprocessing.transform_dataset(dataset)
+        if self.preprocessing:
+            dataset = self.preprocessing_pipeline(dataset)
 
         num_targets = dataset.targets.shape[1] if dataset.targets.ndim > 1 else 1
 
@@ -289,7 +302,7 @@ class RamanBenchmark:
             raise ValueError(f"Target index {target_idx} is out of range for dataset {dataset_name}")
 
         data_df = dataset.to_dataframe(target_idx)
-        data_df = handle_missing_values(data_df)
+        data_df = self.handle_missing_values(data_df)
 
         data_train, data_test = train_test_split(
             data_df,
@@ -316,4 +329,9 @@ class RamanBenchmark:
                 else:
                     data_train, data_test = self.load_dataset_from_key(key)
                     self.save_dataset(key, data_train, data_test)
+
+    def handle_missing_values(self, data_df: DataFrame) -> DataFrame:
+        data_df = data_df.dropna()
+        # TODO imputation?
+        return data_df
 

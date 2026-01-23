@@ -34,3 +34,5 @@ dependencies:
     - tabpfn>=0.1,<0.2
     - interpret>=0.4,<0.5
     - optuna>=3.0,<4.0
+
+  - autogluon

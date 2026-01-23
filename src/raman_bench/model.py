@@ -1,9 +1,11 @@
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 from autogluon.common import TabularDataset
 from autogluon.tabular import TabularPredictor
 from pandas import DataFrame
+
+from raman_data import TASK_TYPE
 
 logger = logging.getLogger(__name__)
 
@@ -24,26 +26,43 @@ class AutoGluonModel:
       preds = model.predict(test_df)
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
-        self.config = dict(config or {})
-        self.label: str = self.config.get("label", "target") # TODO
-        self.metric: str = self.config.get("metric", "rmse") # TODO
-        self.time_limit: int = int(self.config.get("time_limit", 120)) # TODO
-        self.presets: Any = self.config.get("presets", "best_quality") # TODO
+    def __init__(
+            self,
+            model_config: dict,
+            task_type: TASK_TYPE = TASK_TYPE.Regression,
+            autogluon_time_limit: int = 60,
+            autogluon_presets: str = "best_quality",
+            autogluon_path: str = None,
+    ) -> None:
 
-        self.predictor: TabularPredictor = TabularPredictor(label=self.label, eval_metric=self.metric)
+        self.model_config = model_config
+        self.label: str = "target"
+        self.autogluon_path = autogluon_path
+
+        if task_type == TASK_TYPE.Regression:
+            self.metric: str = "rmse"
+        elif task_type == TASK_TYPE.Classification:
+            self.metric: str = "balanced_accuracy" # TODO check if this is the best metric for classification
+        else:
+            raise ValueError(f"Unsupported task type: {task_type}")
+
+        self.time_limit: int = autogluon_time_limit
+        self.presets: Any = autogluon_presets
+
+        self.predictor: TabularPredictor = TabularPredictor(
+            label=self.label,
+            eval_metric=self.metric,
+            path=autogluon_path
+        )
         logger.debug("Initialized AutoGluonModel with label=%s metric=%s time_limit=%s presets=%s",
                      self.label, self.metric, self.time_limit, self.presets)
+
 
     def fit(self, data_train: DataFrame) -> TabularPredictor:
         """Fit the predictor on the provided training data.
 
         data_train may be a pandas DataFrame, a path, or any input accepted by TabularDataset.
         """
-        if self.predictor is None:
-            logger.debug("Predictor not created yet, creating before fit")
-            self.create()
-
         tabular_data = TabularDataset(data_train)
         logger.info("Starting fit: rows=%s time_limit=%s presets=%s", len(tabular_data), self.time_limit, self.presets)
 

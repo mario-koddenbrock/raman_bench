@@ -22,14 +22,13 @@ import logging
 import os
 import sys
 
-from raman_bench.benchmark.config import load_config
-from raman_bench.benchmark.metrics import compute_metrics_from_predictions
-from raman_bench.benchmark.plotting import generate_plots_from_metrics
-from raman_bench.benchmark.predictions import compute_predictions
-from raman_bench.benchmark.utils import check_config
-from raman_data import raman_data, TASK_TYPE
+from raman_bench.config import load_config
+from raman_bench.evaluation import compute_metrics_from_predictions
+from raman_bench.plotting.plotting import generate_plots_from_metrics
+from raman_bench.predictions import compute_predictions
 
 logger = logging.getLogger(__name__)
+
 
 def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
@@ -41,8 +40,8 @@ def main():
     parser.add_argument(
         "--config",
         type=str,
-        default="configs/minimal.yaml",
-        help="Path to configuration YAML file (default: configs/minimal.yaml)",
+        default="configs/minimal.json",
+        help="Path to configuration YAML file (default: configs/minimal.json)",
     )
     parser.add_argument(
         "--step",
@@ -65,14 +64,6 @@ def main():
     os.makedirs(config["output_dir"], exist_ok=True)
     logger.info(f"Output directory: {config['output_dir']}")
 
-    RamanBenchmark(
-
-    )
-
-
-    if not check_config(config):
-        raise ValueError("No datasets to evaluate. Please check your configuration.")
-
     if args.step in ["all", "predictions"]:
         compute_predictions(config)
 
@@ -87,6 +78,6 @@ def main():
 
     return 0
 
+
 if __name__ == "__main__":
     sys.exit(main())
-

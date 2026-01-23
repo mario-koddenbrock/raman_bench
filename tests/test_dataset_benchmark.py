@@ -5,8 +5,6 @@ import numpy as np
 import pandas as pd
 from pandas.testing import assert_frame_equal
 
-import pytest
-
 # Ensure local package is importable when running tests from repository root
 # (insert the 'src' directory at the front of sys.path)
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -50,7 +48,7 @@ def test_ramanbenchmark_caching_and_getitem(tmp_path, monkeypatch):
     cache_dir.mkdir()
 
     # Import the module under test so we can monkeypatch attributes on it
-    import raman_bench.benchmark.dataset as dataset_mod
+    import raman_bench.benchmark as dataset_mod
 
     # Mock preprocessing helpers to keep behaviour simple
     monkeypatch.setattr(dataset_mod, "get_preprocessing_pipeline", lambda name: None)

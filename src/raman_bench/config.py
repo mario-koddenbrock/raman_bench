@@ -10,7 +10,7 @@ DEFAULT_CONFIG = {
     "random_state": 42,
     "cv_folds": 5,
     "test_size": 0.2,
-    "classification_datasets": ["Adenine"],
+    "classification_datasets": ["adenine"],
     "regression_datasets": [],
     "n_classification_datasets": 0,
     "n_regression_datasets": 0,

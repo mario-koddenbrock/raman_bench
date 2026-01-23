@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 import numpy as np
 from raman_bench.metrics import compute_metrics
+from raman_data import TASK_TYPE
 
 logger = logging.getLogger(__name__)
 

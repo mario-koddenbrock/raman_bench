@@ -51,7 +51,7 @@ model_tuned = get_model("randomforest", tuned=True)  # With HPO
 
 # Run benchmark
 runner = BenchmarkRunner(
-    datasets=["Adenine"],
+    datasets=["adenine"],
     models=[model_default, model_tuned],
 )
 results = runner.run()
@@ -65,7 +65,7 @@ runner.generate_plots()
 python scripts/run_benchmark.py
 
 # Run with custom configuration
-python scripts/run_benchmark.py --config configs/default.yaml
+python scripts/run_benchmark.py --config configs/default.json
 
 # Run specific steps
 python scripts/run_benchmark.py --step predictions
@@ -141,7 +141,7 @@ The benchmark consists of three steps:
 from raman_bench import BenchmarkRunner
 
 runner = BenchmarkRunner(
-    datasets=["Adenine"],
+    datasets=["adenine"],
     models=[...],
     cv_folds=5,
     results_dir="results",
@@ -192,7 +192,7 @@ cv_folds: 5
 preprocessing: default
 
 classification_datasets:
-  - Adenine
+  - adenine
   - OtherDataset
 
 classification_models:
@@ -240,7 +240,7 @@ preprocessing work and makes experiments reproducible across runs and machines.
 Quick usage
 
 ```python
-from raman_bench.benchmark.dataset import RamanBenchmark
+from raman_bench.benchmark import RamanBenchmark
 
 # Create a benchmark helper for the two first classification datasets
 bench = RamanBenchmark(n_classification=2, n_regression=0, cache_dir='.cache')
