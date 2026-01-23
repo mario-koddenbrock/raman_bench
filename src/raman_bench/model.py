@@ -1,4 +1,7 @@
 import logging
+import os
+import shutil
+import uuid
 from typing import Any, List
 
 from autogluon.common import TabularDataset
@@ -42,7 +45,7 @@ class AutoGluonModel:
 
         self.models = models
         self.label: str = "target"
-        self.autogluon_path = autogluon_path
+        self.autogluon_path = os.path.join(autogluon_path, uuid.uuid4().hex)
 
         if task_type == TASK_TYPE.Regression:
             self.metric: str = "rmse"
@@ -56,11 +59,15 @@ class AutoGluonModel:
         self.ensemble: bool = ensemble
         self.optimize: bool = optimize
 
+        if self.autogluon_path and os.path.exists(self.autogluon_path):
+            shutil.rmtree(self.autogluon_path)
+
         self.predictor: TabularPredictor = TabularPredictor(
             label=self.label,
             eval_metric=self.metric,
-            path=autogluon_path
+            path=self.autogluon_path
         )
+
         logger.debug("Initialized AutoGluonModel with label=%s metric=%s time_limit=%s presets=%s models=%s ensemble=%s optimize=%s",
                      self.label, self.metric, self.time_limit, self.presets, self.models, self.ensemble, self.optimize)
 
@@ -70,6 +77,7 @@ class AutoGluonModel:
 
         data_train may be a pandas DataFrame, a path, or any input accepted by TabularDataset.
         """
+
         tabular_data = TabularDataset(data_train)
         logger.info("Starting fit: rows=%s time_limit=%s presets=%s models=%s ensemble=%s optimize=%s",
                     len(tabular_data), self.time_limit, self.presets, self.models, self.ensemble, self.optimize)
@@ -77,7 +85,7 @@ class AutoGluonModel:
         fit_args = {
             "time_limit": self.time_limit,
             "presets": self.presets,
-            "hyperparameters": {"models": self.models}
+            "included_model_types": self.models,
         }
 
         if not self.ensemble:
