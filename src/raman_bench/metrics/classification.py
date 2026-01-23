@@ -4,9 +4,12 @@ Classification metrics for Raman Bench.
 Provides comprehensive evaluation metrics for classification tasks.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, Optional, Union
 
 import numpy as np
+from sklearn.metrics import roc_auc_score, matthews_corrcoef, cohen_kappa_score, balanced_accuracy_score, f1_score, \
+    accuracy_score, precision_score, recall_score, confusion_matrix, classification_report
+from sklearn.preprocessing import LabelBinarizer
 
 
 class ClassificationMetrics:
@@ -66,46 +69,25 @@ class ClassificationMetrics:
         return metrics
 
     def accuracy(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
-        """Compute accuracy score."""
-        from sklearn.metrics import accuracy_score
-
         return accuracy_score(y_true, y_pred)
 
     def precision(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
-        """Compute precision score."""
-        from sklearn.metrics import precision_score
-
         return precision_score(y_true, y_pred, average=self.average, zero_division=0)
 
     def recall(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
-        """Compute recall score."""
-        from sklearn.metrics import recall_score
-
         return recall_score(y_true, y_pred, average=self.average, zero_division=0)
 
     def f1_score(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
-        """Compute F1 score."""
-        from sklearn.metrics import f1_score
-
         return f1_score(y_true, y_pred, average=self.average, zero_division=0)
 
     def balanced_accuracy(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
-        """Compute balanced accuracy score."""
-        from sklearn.metrics import balanced_accuracy_score
-
-        return balanced_accuracy_score(y_true, y_pred)
+        return float(balanced_accuracy_score(y_true, y_pred))
 
     def cohen_kappa(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
-        """Compute Cohen's Kappa score."""
-        from sklearn.metrics import cohen_kappa_score
-
-        return cohen_kappa_score(y_true, y_pred)
+        return float(cohen_kappa_score(y_true, y_pred))
 
     def matthews_corrcoef(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
-        """Compute Matthews correlation coefficient."""
-        from sklearn.metrics import matthews_corrcoef
-
-        return matthews_corrcoef(y_true, y_pred)
+        return float(matthews_corrcoef(y_true, y_pred))
 
     def roc_auc(
         self,
@@ -113,20 +95,6 @@ class ClassificationMetrics:
         y_proba: np.ndarray,
         multi_class: str = "ovr",
     ) -> float:
-        """
-        Compute ROC-AUC score.
-
-        Args:
-            y_true: True labels
-            y_proba: Predicted probabilities
-            multi_class: Multi-class strategy ('ovr' or 'ovo')
-
-        Returns:
-            ROC-AUC score
-        """
-        from sklearn.metrics import roc_auc_score
-        from sklearn.preprocessing import LabelBinarizer
-
         n_classes = len(np.unique(y_true))
 
         if n_classes == 2:
@@ -146,19 +114,6 @@ class ClassificationMetrics:
         y_pred: np.ndarray,
         normalize: Optional[str] = None,
     ) -> np.ndarray:
-        """
-        Compute confusion matrix.
-
-        Args:
-            y_true: True labels
-            y_pred: Predicted labels
-            normalize: Normalization method ('true', 'pred', 'all', or None)
-
-        Returns:
-            Confusion matrix
-        """
-        from sklearn.metrics import confusion_matrix
-
         return confusion_matrix(y_true, y_pred, normalize=normalize)
 
     def classification_report(
@@ -167,19 +122,6 @@ class ClassificationMetrics:
         y_pred: np.ndarray,
         output_dict: bool = True,
     ) -> Union[str, Dict]:
-        """
-        Generate a classification report.
-
-        Args:
-            y_true: True labels
-            y_pred: Predicted labels
-            output_dict: Whether to return a dictionary
-
-        Returns:
-            Classification report as string or dictionary
-        """
-        from sklearn.metrics import classification_report
-
         return classification_report(y_true, y_pred, output_dict=output_dict, zero_division=0)
 
     def get_per_class_metrics(
@@ -187,16 +129,6 @@ class ClassificationMetrics:
         y_true: np.ndarray,
         y_pred: np.ndarray,
     ) -> Dict[str, Dict[str, float]]:
-        """
-        Get metrics for each class individually.
-
-        Args:
-            y_true: True labels
-            y_pred: Predicted labels
-
-        Returns:
-            Dictionary mapping class names to their metrics
-        """
         report = self.classification_report(y_true, y_pred, output_dict=True)
 
         # Filter out summary statistics
