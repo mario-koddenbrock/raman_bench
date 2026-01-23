@@ -12,7 +12,6 @@ import logging
 import os
 from typing import Tuple, List, Dict
 
-import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split
@@ -23,6 +22,26 @@ from raman_data import raman_data, TASK_TYPE
 
 logger = logging.getLogger(__name__)
 
+def configure_benchmark(config):
+    n_classification = config["n_classification"]
+    n_regression = config["n_regression"]
+    test_size = config["test_size"]
+    random_state = config["random_state"]
+    preprocessing = config["preprocessing"]
+    augmentation = config["augmentation"]
+    cache_dir = config["cache_dir"]
+
+    benchmark = RamanBenchmark(
+        n_classification=n_classification,
+        n_regression=n_regression,
+        test_size=test_size,
+        random_state=random_state,
+        preprocessing=preprocessing,
+        augmentation=augmentation,
+        cache_dir=cache_dir,
+    )
+    benchmark.init_datasets()
+    return benchmark
 
 class RamanBenchmark:
     """Manage dataset loading, preprocessing, caching and iteration for the benchmark.
@@ -38,7 +57,7 @@ class RamanBenchmark:
       - Load the raw dataset, optionally apply a preprocessing pipeline and
         augmentation, convert to pandas DataFrame, and split into train/test
       - Persist splits to a simple on-disk cache (numpy .npy files) and maintain
-        a JSON index describing how many target splits exist per dataset
+        a JSON _index describing how many target splits exist per dataset
       - Provide sequence-style access via `__len__` and `__getitem__` so the
         benchmark runner can iterate all prepared splits
 
@@ -62,7 +81,7 @@ class RamanBenchmark:
         Whether to perform data augmentation. Currently a placeholder flag; if
         True a message is logged and the dataset is returned unchanged.
     cache_dir : str, optional
-        Directory used to store cached .npy dataset splits and the index.json
+        Directory used to store cached .npy dataset splits and the _index.json
         file. Defaults to ".cache".
 
     Attributes
@@ -71,13 +90,13 @@ class RamanBenchmark:
         Names of classification datasets chosen for the benchmark.
     dataset_names_regression : list[str]
         Names of regression datasets chosen for the benchmark.
-    key_list : list[str]
+    _key_list : list[str]
         Flat list of keys identifying each dataset split in the format
         "{dataset_name}_{target_idx}". This is the sequence order used by
         `__getitem__`.
-    index : dict
+    _index : dict
         Mapping from dataset name to number of target columns (i.e. how many
-        target splits exist for that dataset). Persisted in `index.json`.
+        target splits exist for that dataset). Persisted in `_index.json`.
 
     Examples
     --------
@@ -128,111 +147,70 @@ class RamanBenchmark:
         self.cache_dir = cache_dir
         os.makedirs(cache_dir, exist_ok=True)
 
-        self.key_list = []
-        self.task_type_list = []
+        self._key_list = []
+        self._task_type_list = []
 
-        self.index_file = os.path.join(cache_dir, "index.json")
-        self.index:Dict[str, int] = self.load_index()
-        self.init_datasets()
-        self.save_index()
-
-
+        self._index_file = os.path.join(cache_dir, "_index.json")
+        self._index:Dict[str, int] = self._load__index()
+        self.is_initialized = False
 
     def __len__(self):
         """Return number of prepared dataset splits available in the benchmark.
 
-        This corresponds to the length of ``self.key_list``.
+        This corresponds to the length of ``self._key_list``.
         """
-        return len(self.key_list)
+        return len(self._key_list)
 
     def __getitem__(self, idx: int) -> Tuple[DataFrame, DataFrame, str, TASK_TYPE]:
-        """Return the (train, test) DataFrame pair for the given index.
+        """Return the (train, test) DataFrame pair for the given _index.
 
-        The index corresponds to entries in ``self.key_list``. If the dataset
+        The _index corresponds to entries in ``self._key_list``. If the dataset
         split has been cached on disk it is loaded from the cache; otherwise it
         will be prepared on-the-fly, saved to cache and returned.
 
         Parameters
         ----------
         idx : int
-            Integer index into the list of prepared splits.
+            Integer _index into the list of prepared splits.
 
         Returns
         -------
         (pandas.DataFrame, pandas.DataFrame)
             Tuple containing (train_dataframe, test_dataframe).
         """
-        key = self.key_list[idx]
-        task_type = self.task_type_list[idx]
-        if self.has_dataset_in_cache(key):
-            data_train, data_test = self.load_dataset_from_cache(key)
+        if not self.is_initialized:
+            self.init_datasets()
+        
+        key = self._key_list[idx]
+        task_type = self._task_type_list[idx]
+        if self._has_dataset_in_cache(key):
+            data_train, data_test = self._load_dataset_from_cache(key)
         else:
             # this should not happen
-            data_train, data_test = self.load_dataset_from_key(key)
-            self.save_dataset(key, data_train, data_test)
+            data_train, data_test = self._load_dataset_from_key(key)
+            self._save_dataset(key, data_train, data_test)
             logger.warning(f"Dataset {key} already in cache.")
         return data_train, data_test, key, task_type
-
-
-    @staticmethod
-    def get_key(dataset_name: str, target_idx: int) -> str:
-        """Create a key string for a dataset target split.
-
-        The returned format is ``"{dataset_name}_{target_idx}"`` and is used to
-        identify and cache specific target columns from multi-target datasets.
-        """
-        dataset_name = dataset_name.replace("/", "_").replace("\\", "_")
-        return f"{dataset_name}_{target_idx}"
-
-    @staticmethod
-    def split_key(key: str) -> Tuple[str, int]:
-        """Reverse `get_key` and return (dataset_name, target_idx).
-
-        Raises
-        ------
-        ValueError
-            If the key cannot be split into the expected two parts using
-            underscore delimiting.
-        """
-        splits = key.split("_")
-        dataset_name = "_".join(splits[:-1])
-        target_idx = splits[-1]
-        return dataset_name, int(target_idx)
-
-    def load_index(self) -> Dict[str, int]:
-        """Load the JSON index file from disk if present.
-
-        The index maps dataset names to their number of target columns. If the
-        index file does not exist an empty dict is returned.
-        """
-        if not os.path.exists(self.index_file):
-            return dict()
-        with open(self.index_file, "r") as f:
-            index = json.load(f)
-        return index
-
-    def save_index(self):
-        """Persist the in-memory index mapping to disk (``index.json``)."""
-        with open(self.index_file, "w") as f:
-            json.dump(self.index, f)
 
     def init_datasets(self):
         """Ensure dataset cache and key list are initialized.
 
         This will scan the configured classification and regression dataset
-        names, populate the index with target counts for each dataset, and
-        construct ``self.key_list`` for iteration.
+        names, populate the _index with target counts for each dataset, and
+        construct ``self._key_list`` for iteration.
         """
-        self.load_datasets(self.dataset_names_classification)
-        self.load_datasets(self.dataset_names_regression)
+        self._load_datasets(self.dataset_names_classification)
+        self._load_datasets(self.dataset_names_regression)
 
         for dataset_name in self.dataset_names_classification + self.dataset_names_regression:
-            for target_idx in range(self.index[dataset_name]):
-                self.key_list.append(self.get_key(dataset_name, target_idx))
-                self.task_type_list.append(TASK_TYPE.Classification if dataset_name in self.dataset_names_classification else TASK_TYPE.Regression)
+            for target_idx in range(self._index[dataset_name]):
+                self._key_list.append(self._get_key(dataset_name, target_idx))
+                self._task_type_list.append(TASK_TYPE.Classification if dataset_name in self.dataset_names_classification else TASK_TYPE.Regression)
+                
+        self._save__index()
+        self.is_initialized = True
 
-
-    def get_cache_file_paths(self, key: str) -> Tuple[str, str]:
+    def _get_cache_file_paths(self, key: str) -> Tuple[str, str]:
         """Return the file paths for the train/test .npy cache files for a key.
 
         Returns
@@ -241,17 +219,17 @@ class RamanBenchmark:
         """
         return f"{self.cache_dir}/{key}_train.pkl", f"{self.cache_dir}/{key}_test.pkl"
 
-    def save_dataset(self, key: str, data_train: DataFrame, data_test: DataFrame):
+    def _save_dataset(self, key: str, data_train: DataFrame, data_test: DataFrame):
         """Save train/test split to disk as numpy files using allow_pickle=True.
 
         Note: DataFrames are saved as pickled numpy objects; when loading they
         will need to be interpreted back into DataFrames by callers.
         """
-        cache_file_train, cache_file_test = self.get_cache_file_paths(key)
+        cache_file_train, cache_file_test = self._get_cache_file_paths(key)
         data_train.to_pickle(cache_file_train)
         data_test.to_pickle(cache_file_test)
 
-    def load_dataset_from_cache(self, key: str) -> Tuple[DataFrame, DataFrame]:
+    def _load_dataset_from_cache(self, key: str) -> Tuple[DataFrame, DataFrame]:
         """Load a previously cached train/test split from disk and return it.
 
         Returns
@@ -260,33 +238,33 @@ class RamanBenchmark:
             The loaded numpy objects (typically pandas DataFrames) for train and
             test splits.
         """
-        cache_file_train, cache_file_test = self.get_cache_file_paths(key)
+        cache_file_train, cache_file_test = self._get_cache_file_paths(key)
         data_train = pd.read_pickle(cache_file_train)
         data_test = pd.read_pickle(cache_file_test)
         return data_train, data_test
 
-    def has_dataset_in_cache(self, key: str) -> bool:
+    def _has_dataset_in_cache(self, key: str) -> bool:
         """Return True if both train and test cache files exist for key."""
-        cache_file_train, cache_file_test = self.get_cache_file_paths(key)
+        cache_file_train, cache_file_test = self._get_cache_file_paths(key)
         return os.path.exists(cache_file_train) and os.path.exists(cache_file_test)
 
-    def load_dataset_from_key(self, key: str) -> Tuple[DataFrame, DataFrame]:
+    def _load_dataset_from_key(self, key: str) -> Tuple[DataFrame, DataFrame]:
         """Load and prepare a dataset split identified by the given key.
 
         This performs the following steps:
-          - Resolve dataset name and target index via ``split_key``
+          - Resolve dataset name and target _index via ``_split_key``
           - Load the dataset object via ``raman_data(dataset_name)``
           - Optionally apply augmentation (currently a placeholder)
           - Apply the configured preprocessing pipeline
-          - Convert to a pandas DataFrame for the requested target index
-          - Handle missing values (via ``handle_missing_values``)
+          - Convert to a pandas DataFrame for the requested target _index
+          - Handle missing values (via ``_handle_missing_values``)
           - Split into train/test with ``train_test_split``
 
         Returns
         -------
         (train_df, test_df)
         """
-        dataset_name, target_idx = self.split_key(key)
+        dataset_name, target_idx = self._split_key(key)
         dataset = raman_data(dataset_name)
 
         # TODO Data augmentation
@@ -299,10 +277,10 @@ class RamanBenchmark:
         num_targets = dataset.targets.shape[1] if dataset.targets.ndim > 1 else 1
 
         if target_idx >= num_targets:
-            raise ValueError(f"Target index {target_idx} is out of range for dataset {dataset_name}")
+            raise ValueError(f"Target _index {target_idx} is out of range for dataset {dataset_name}")
 
         data_df = dataset.to_dataframe(target_idx)
-        data_df = self.handle_missing_values(data_df)
+        data_df = self._handle_missing_values(data_df)
 
         data_train, data_test = train_test_split(
             data_df,
@@ -312,25 +290,68 @@ class RamanBenchmark:
 
         return data_train, data_test
 
-    def load_datasets(self, dataset_names:List[str]):
+    def _load_datasets(self, dataset_names:List[str]):
 
         for dataset_name in tqdm(dataset_names, desc=f"Loading datasets"):
-            if dataset_name in self.index:
-                num_targets = self.index[dataset_name]
+            if dataset_name in self._index:
+                num_targets = self._index[dataset_name]
             else:
                 dataset = raman_data(dataset_name)
                 num_targets = dataset.targets.shape[1] if dataset.targets.ndim > 1 else 1
-                self.index[dataset_name] = num_targets
+                self._index[dataset_name] = num_targets
 
             for target_idx in range(num_targets):
-                key = self.get_key(dataset_name, target_idx)
-                if self.has_dataset_in_cache(key):
+                key = self._get_key(dataset_name, target_idx)
+                if self._has_dataset_in_cache(key):
                     logger.debug(f"Dataset {key} already in cache.")
                 else:
-                    data_train, data_test = self.load_dataset_from_key(key)
-                    self.save_dataset(key, data_train, data_test)
+                    data_train, data_test = self._load_dataset_from_key(key)
+                    self._save_dataset(key, data_train, data_test)
 
-    def handle_missing_values(self, data_df: DataFrame) -> DataFrame:
+
+    @staticmethod
+    def _get_key(dataset_name: str, target_idx: int) -> str:
+        """Create a key string for a dataset target split.
+
+        The returned format is ``"{dataset_name}_{target_idx}"`` and is used to
+        identify and cache specific target columns from multi-target datasets.
+        """
+        dataset_name = dataset_name.replace("/", "_").replace("\\", "_")
+        return f"{dataset_name}_{target_idx}"
+
+    @staticmethod
+    def _split_key(key: str) -> Tuple[str, int]:
+        """Reverse `_get_key` and return (dataset_name, target_idx).
+
+        Raises
+        ------
+        ValueError
+            If the key cannot be split into the expected two parts using
+            underscore delimiting.
+        """
+        splits = key.split("_")
+        dataset_name = "_".join(splits[:-1])
+        target_idx = splits[-1]
+        return dataset_name, int(target_idx)
+
+    def _load__index(self) -> Dict[str, int]:
+        """Load the JSON _index file from disk if present.
+
+        The _index maps dataset names to their number of target columns. If the
+        _index file does not exist an empty dict is returned.
+        """
+        if not os.path.exists(self._index_file):
+            return dict()
+        with open(self._index_file, "r") as f:
+            _index = json.load(f)
+        return _index
+
+    def _save__index(self):
+        """Persist the in-memory _index mapping to disk (``_index.json``)."""
+        with open(self._index_file, "w") as f:
+            json.dump(self._index, f)
+
+    def _handle_missing_values(self, data_df: DataFrame) -> DataFrame:
         data_df = data_df.dropna()
         # TODO imputation?
         return data_df
