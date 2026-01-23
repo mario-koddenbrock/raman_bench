@@ -81,7 +81,7 @@ class RamanBenchmark:
         Whether to perform data augmentation. Currently a placeholder flag; if
         True a message is logged and the dataset is returned unchanged.
     cache_dir : str, optional
-        Directory used to store cached .npy dataset splits and the _index.json
+        Directory used to store cached .npy dataset splits and the index.json
         file. Defaults to ".cache".
 
     Attributes
@@ -96,14 +96,14 @@ class RamanBenchmark:
         `__getitem__`.
     _index : dict
         Mapping from dataset name to number of target columns (i.e. how many
-        target splits exist for that dataset). Persisted in `_index.json`.
+        target splits exist for that dataset). Persisted in `index.json`.
 
     Examples
     --------
     >>> bench = RamanBenchmark(n_classification=2, n_regression=0, cache_dir=".cache")
     >>> len(bench)
     2
-    >>> train_df, test_df = bench[0]
+    >>> train_df, test_df, key, task_type = bench[0]
 
     """
 
@@ -150,8 +150,8 @@ class RamanBenchmark:
         self._key_list = []
         self._task_type_list = []
 
-        self._index_file = os.path.join(cache_dir, "_index.json")
-        self._index:Dict[str, int] = self._load__index()
+        self._index_file = os.path.join(cache_dir, "index.json")
+        self._index: Dict[str, int] = self._load_index()
         self.is_initialized = False
 
     def __len__(self):
@@ -204,7 +204,7 @@ class RamanBenchmark:
 
         for dataset_name in self.dataset_names_classification + self.dataset_names_regression:
             for target_idx in range(self._index[dataset_name]):
-                self._key_list.append(self._get_key(dataset_name, target_idx))
+                self._key_list.append(self.get_key(dataset_name, target_idx))
                 self._task_type_list.append(TASK_TYPE.Classification if dataset_name in self.dataset_names_classification else TASK_TYPE.Regression)
                 
         self._save__index()
@@ -252,7 +252,7 @@ class RamanBenchmark:
         """Load and prepare a dataset split identified by the given key.
 
         This performs the following steps:
-          - Resolve dataset name and target _index via ``_split_key``
+          - Resolve dataset name and target _index via ``split_key``
           - Load the dataset object via ``raman_data(dataset_name)``
           - Optionally apply augmentation (currently a placeholder)
           - Apply the configured preprocessing pipeline
@@ -264,7 +264,7 @@ class RamanBenchmark:
         -------
         (train_df, test_df)
         """
-        dataset_name, target_idx = self._split_key(key)
+        dataset_name, target_idx = self.split_key(key)
         dataset = raman_data(dataset_name)
 
         # TODO Data augmentation
@@ -301,7 +301,7 @@ class RamanBenchmark:
                 self._index[dataset_name] = num_targets
 
             for target_idx in range(num_targets):
-                key = self._get_key(dataset_name, target_idx)
+                key = self.get_key(dataset_name, target_idx)
                 if self._has_dataset_in_cache(key):
                     logger.debug(f"Dataset {key} already in cache.")
                 else:
@@ -310,7 +310,7 @@ class RamanBenchmark:
 
 
     @staticmethod
-    def _get_key(dataset_name: str, target_idx: int) -> str:
+    def get_key(dataset_name: str, target_idx: int) -> str:
         """Create a key string for a dataset target split.
 
         The returned format is ``"{dataset_name}_{target_idx}"`` and is used to
@@ -320,8 +320,8 @@ class RamanBenchmark:
         return f"{dataset_name}_{target_idx}"
 
     @staticmethod
-    def _split_key(key: str) -> Tuple[str, int]:
-        """Reverse `_get_key` and return (dataset_name, target_idx).
+    def split_key(key: str) -> Tuple[str, int]:
+        """Reverse `get_key` and return (dataset_name, target_idx).
 
         Raises
         ------
@@ -334,7 +334,7 @@ class RamanBenchmark:
         target_idx = splits[-1]
         return dataset_name, int(target_idx)
 
-    def _load__index(self) -> Dict[str, int]:
+    def _load_index(self) -> Dict[str, int]:
         """Load the JSON _index file from disk if present.
 
         The _index maps dataset names to their number of target columns. If the
@@ -343,11 +343,11 @@ class RamanBenchmark:
         if not os.path.exists(self._index_file):
             return dict()
         with open(self._index_file, "r") as f:
-            _index = json.load(f)
-        return _index
+            index = json.load(f)
+        return index
 
     def _save__index(self):
-        """Persist the in-memory _index mapping to disk (``_index.json``)."""
+        """Persist the in-memory _index mapping to disk (``index.json``)."""
         with open(self._index_file, "w") as f:
             json.dump(self._index, f)
 
