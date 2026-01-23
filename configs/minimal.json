@@ -7,11 +7,21 @@
   "augmentation": false,
   "cache_dir": ".cache",
   "output_dir": "results/test",
-  "model_configs": [
-    {
-    "name": "test",
-    "hyperparameters": {}
-    }
+  "models": [
+    "LGBModel",
+    "CatBoostModel",
+    "XGBoostModel",
+    "RealMLPModel",
+    "TabMModel",
+    "MitraModel",
+    "TabICLModel",
+    "TabPFNV2Model",
+    "RFModel",
+    "XTModel",
+    "KNNModel",
+    "LinearModel",
+    "TabularNeuralNetTorchModel",
+    "NNFastAiTabularModel"
   ],
   "autogluon_time_limit": 500,
   "autogluon_presets": "best_quality"
