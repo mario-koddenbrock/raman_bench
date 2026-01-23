@@ -53,8 +53,15 @@ def _compute_predictions_for_task(datasets, model_configs, task_type, config, pi
     random_state = config.get("random_state", 42)
     total = len(datasets) * len(model_configs)
     pbar = tqdm(total=total, desc=f"Computing {task_type} predictions")
+
     for dataset_name in datasets:
         dataset = raman_data(dataset_name)
+        logger.info(f"Computing predictions for dataset: {dataset_name}")
+        logger.info(f"Dataset size: {len(dataset)} samples")
+        if len(dataset) < 10:
+            logger.warning("Dataset size is small. Skipping predictions computation.")
+            continue
+
         if pipeline is not None:
             dataset = pipeline.transform_dataset(dataset)
 
