@@ -65,25 +65,10 @@ def main():
     os.makedirs(config["output_dir"], exist_ok=True)
     logger.info(f"Output directory: {config['output_dir']}")
 
-    n_classification = config.get("n_classification_datasets", 0)
-    n_regression = config.get("n_regression_datasets", 0)
-    logger.info(f"Datasets: {n_classification} classification, {n_regression} regression")
+    RamanBenchmark(
 
-    if n_classification == -1:
-        config["classification_datasets"] = raman_data(task_type=TASK_TYPE.Classification)
-    elif n_classification > 0:
-        all_classification = raman_data(task_type=TASK_TYPE.Classification)
-        config["classification_datasets"] = all_classification[:n_classification]
-    else:
-        config["classification_datasets"] = []
+    )
 
-    if n_regression == -1:
-        config["regression_datasets"] = raman_data(task_type=TASK_TYPE.Regression)
-    elif n_regression > 0:
-        all_regression = raman_data(task_type=TASK_TYPE.Regression)
-        config["regression_datasets"] = all_regression[:n_regression]
-    else:
-        config["regression_datasets"] = []
 
     if not check_config(config):
         raise ValueError("No datasets to evaluate. Please check your configuration.")
