@@ -70,7 +70,15 @@ class BenchmarkPlotter:
 
         # Create pivot table for grouped bar chart
         if "dataset" in metrics_df.columns:
-            pivot = metrics_df.pivot(index="dataset", columns="model", values=metric)
+            # Use pivot_table with aggregation to handle duplicate (dataset, model)
+            # entries (e.g., multiple target_idx rows) by averaging the metric.
+            try:
+                pivot = metrics_df.pivot_table(index="dataset", columns="model", values=metric, aggfunc="mean")
+            except Exception:
+                # Fall back to grouping and unstacking which provides clearer control
+                logger = logging.getLogger(__name__)
+                logger.debug("Pivot failed, aggregating by dataset/model using groupby.mean()")
+                pivot = metrics_df.groupby(["dataset", "model"]).agg({metric: "mean"}).unstack(level=-1)
             pivot.plot(kind="bar", ax=ax, width=0.8)
             ax.set_xlabel("Dataset")
         else:
@@ -114,9 +122,13 @@ class BenchmarkPlotter:
 
         # Prepare data for heatmap
         if "dataset" in metrics_df.columns:
-            # Create model-dataset index
-            metrics_df["index"] = metrics_df["model"] + " | " + metrics_df["dataset"]
-            metrics_df = metrics_df.set_index("index")
+            # If there are multiple rows for the same (model, dataset)
+            # (e.g. different target_idx), aggregate numeric metrics by mean
+            # so the heatmap compares models x datasets cleanly.
+            group_cols = [c for c in ["model", "dataset"] if c in metrics_df.columns]
+            agg_df = metrics_df.groupby(group_cols).mean(numeric_only=True).reset_index()
+            agg_df["index"] = agg_df["model"] + " | " + agg_df["dataset"]
+            metrics_df = agg_df.set_index("index")
 
         # Select metrics columns
         if metrics:
@@ -273,10 +285,16 @@ class BenchmarkPlotter:
         angles += angles[:1]  # Complete the circle
 
         # Plot each model
-        for _, row in metrics_df.iterrows():
+        # If multiple rows per model are present, aggregate by model (mean)
+        if "model" in metrics_df.columns:
+            radar_df = metrics_df.groupby("model").mean(numeric_only=True)
+        else:
+            radar_df = metrics_df.set_index("model") if "model" in metrics_df.columns else metrics_df
+
+        for model_name, row in radar_df.iterrows():
             values = row[metrics].tolist()
             values += values[:1]
-            ax.plot(angles, values, "o-", linewidth=2, label=row["model"])
+            ax.plot(angles, values, "o-", linewidth=2, label=str(model_name))
             ax.fill(angles, values, alpha=0.25)
 
         # Set labels
