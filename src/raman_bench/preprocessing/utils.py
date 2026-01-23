@@ -3,8 +3,8 @@ Utility functions for preprocessing pipelines.
 
 Provides pre-configured pipelines for common use cases.
 """
-
 from raman_bench.preprocessing.pipeline import PreprocessingPipeline
+import ramanspy as rp
 
 
 def get_default_pipeline() -> PreprocessingPipeline:
@@ -16,8 +16,6 @@ def get_default_pipeline() -> PreprocessingPipeline:
     Returns:
         PreprocessingPipeline with default steps
     """
-    import ramanspy as rp
-
     steps = [
         rp.preprocessing.baseline.ASLS(),
         rp.preprocessing.normalise.MinMax(),
@@ -36,7 +34,6 @@ def get_minimal_pipeline() -> PreprocessingPipeline:
     Returns:
         PreprocessingPipeline with minimal steps
     """
-    import ramanspy as rp
 
     steps = [
         rp.preprocessing.normalise.MinMax(),
@@ -54,7 +51,6 @@ def get_robust_pipeline() -> PreprocessingPipeline:
     Returns:
         PreprocessingPipeline with robust steps
     """
-    import ramanspy as rp
 
     steps = [
         rp.preprocessing.despike.WhitakerHayes(),
@@ -84,7 +80,6 @@ def get_custom_pipeline(
     Returns:
         Custom PreprocessingPipeline
     """
-    import ramanspy as rp
 
     steps = []
 
