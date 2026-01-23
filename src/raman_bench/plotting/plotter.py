@@ -2,9 +2,9 @@
 Main plotter class for benchmark visualization.
 """
 
+import logging
 import os
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -462,6 +462,5 @@ class BenchmarkPlotter:
                     output_path=os.path.join(output_dir, f"boxplot_{metric}.{self.save_format}"),
                 )
 
-        print(f"Benchmark report saved to {output_dir}")
-
-
+        logger = logging.getLogger(__name__)
+        logger.info("Benchmark report saved to %s", output_dir)
