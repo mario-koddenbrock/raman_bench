@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, List
 
 from autogluon.common import TabularDataset
 from autogluon.tabular import TabularPredictor
@@ -18,6 +18,9 @@ class AutoGluonModel:
       - metric: str = 'rmse'
       - time_limit: int = 7200
       - presets: str = 'best_quality'
+      - models: list[str] = ['LGBModel', 'CatBoostModel', 'XGBoostModel', 'RealMLPModel', 'TabMModel', 'MitraModel', 'TabICLModel', 'TabPFNV2Model', 'RFModel', 'XTModel', 'KNNModel', 'LinearModel', 'TabularNeuralNetTorchModel', 'NNFastAiTabularModel']
+      - ensemble: bool = True
+      - optimize: bool = True
 
     Usage:
       model = AutoGluonModel(config)
@@ -28,14 +31,16 @@ class AutoGluonModel:
 
     def __init__(
             self,
-            model_config: dict,
+            models: List[str],
+            ensemble: bool = True,
+            optimize: bool = True,
             task_type: TASK_TYPE = TASK_TYPE.Regression,
             autogluon_time_limit: int = 60,
             autogluon_presets: str = "best_quality",
             autogluon_path: str = None,
     ) -> None:
 
-        self.model_config = model_config
+        self.models = models
         self.label: str = "target"
         self.autogluon_path = autogluon_path
 
@@ -48,14 +53,16 @@ class AutoGluonModel:
 
         self.time_limit: int = autogluon_time_limit
         self.presets: Any = autogluon_presets
+        self.ensemble: bool = ensemble
+        self.optimize: bool = optimize
 
         self.predictor: TabularPredictor = TabularPredictor(
             label=self.label,
             eval_metric=self.metric,
             path=autogluon_path
         )
-        logger.debug("Initialized AutoGluonModel with label=%s metric=%s time_limit=%s presets=%s",
-                     self.label, self.metric, self.time_limit, self.presets)
+        logger.debug("Initialized AutoGluonModel with label=%s metric=%s time_limit=%s presets=%s models=%s ensemble=%s optimize=%s",
+                     self.label, self.metric, self.time_limit, self.presets, self.models, self.ensemble, self.optimize)
 
 
     def fit(self, data_train: DataFrame) -> TabularPredictor:
@@ -64,9 +71,22 @@ class AutoGluonModel:
         data_train may be a pandas DataFrame, a path, or any input accepted by TabularDataset.
         """
         tabular_data = TabularDataset(data_train)
-        logger.info("Starting fit: rows=%s time_limit=%s presets=%s", len(tabular_data), self.time_limit, self.presets)
+        logger.info("Starting fit: rows=%s time_limit=%s presets=%s models=%s ensemble=%s optimize=%s",
+                    len(tabular_data), self.time_limit, self.presets, self.models, self.ensemble, self.optimize)
 
-        self.predictor.fit(tabular_data, time_limit=self.time_limit, presets=self.presets)
+        fit_args = {
+            "time_limit": self.time_limit,
+            "presets": self.presets,
+            "hyperparameters": {"models": self.models}
+        }
+
+        if not self.ensemble:
+            fit_args["num_bag_folds"] = 0
+
+        if not self.optimize:
+            fit_args["hyperparameter_tune_kwargs"] = None
+
+        self.predictor.fit(tabular_data, **fit_args)
         logger.info("Fit completed")
         return self.predictor
 
@@ -84,4 +104,3 @@ class AutoGluonModel:
         logger.info("Generating predictions for %s rows", len(test_input))
         predictions = self.predictor.predict(test_input)
         return predictions
-
