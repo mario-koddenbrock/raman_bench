@@ -20,7 +20,6 @@ Usage:
 import argparse
 import logging
 import os
-import sys
 
 from raman_bench.config import load_config
 from raman_bench.evaluation import compute_metrics_from_predictions
@@ -80,4 +79,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
