@@ -31,8 +31,8 @@ def compute_predictions(config):
 
     pbar = tqdm(total=len(benchmark)*len(models))
 
-    for data_train, data_test, key, task_type in benchmark:
-        for model_name in models:
+    for model_name in models:
+        for data_train, data_test, key, task_type in benchmark:
 
             if "all" in model_name:
                 models_to_run = [
@@ -53,11 +53,15 @@ def compute_predictions(config):
                 autogluon_path=os.path.join(cache_dir, "autogluon", key),
             )
 
-            model.fit(data_train)
-            y_pred = model.predict(data_test)
+            try:
+                model.fit(data_train)
+                y_pred = model.predict(data_test)
 
-            filename = f"{key}_{model_name}_predictions.csv"
-            y_pred.sort_index().to_csv(os.path.join(predictions_dir, filename), index=True)
+                filename = f"{key}_{model_name}_predictions.csv"
+                y_pred.sort_index().to_csv(os.path.join(predictions_dir, filename), index=True)
+
+            except Exception as e:
+                logger.error(f"Error computing predictions for {key} and model {model_name}: {e}")
 
             pbar.update(1)
     pbar.close()
