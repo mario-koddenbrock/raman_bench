@@ -43,6 +43,7 @@ class AutoGluonModel:
             autogluon_path: str = None,
     ) -> None:
 
+        self.task_type = task_type
         self.models = models
         self.label: str = "target"
         self.autogluon_path = os.path.join(autogluon_path, uuid.uuid4().hex)
@@ -82,10 +83,24 @@ class AutoGluonModel:
         logger.info("Starting fit: rows=%s time_limit=%s presets=%s models=%s ensemble=%s optimize=%s",
                     len(tabular_data), self.time_limit, self.presets, self.models, self.ensemble, self.optimize)
 
+        if self.task_type == TASK_TYPE.Regression:
+            problem_type = "regression"
+        elif self.task_type == TASK_TYPE.Classification:
+            if len(tabular_data["target"].unique()) > 2:
+                problem_type = "multiclass"
+            else:
+                problem_type = "binary"
+
         fit_args = {
             "time_limit": self.time_limit,
             "presets": self.presets,
-            "included_model_types": self.models,
+            "auto_stack": False,
+            # "included_model_types": self.models,
+            "raise_on_no_models_fitted": True,
+            "verbosity": 3,
+            "hyperparameters": {
+                model: {} for model in self.models
+            },
         }
 
         if not self.ensemble:
