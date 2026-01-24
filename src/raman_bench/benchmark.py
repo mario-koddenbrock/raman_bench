@@ -130,8 +130,8 @@ class RamanBenchmark:
             self.dataset_names_classification = raman_data(task_type=TASK_TYPE.Classification)
         elif n_classification > 0:
             all_classification = raman_data(task_type=TASK_TYPE.Classification)
-            # self.dataset_names_classification = all_classification[:n_classification]
-            self.dataset_names_classification = [all_classification[-1]] # TODO
+            self.dataset_names_classification = all_classification[:n_classification]
+            # self.dataset_names_classification = [all_classification[-1]] # TODO
 
         self.dataset_names_regression = []
         if n_regression == -1:
@@ -199,10 +199,15 @@ class RamanBenchmark:
         names, populate the _index with target counts for each dataset, and
         construct ``self._key_list`` for iteration.
         """
-        self._load_datasets(self.dataset_names_classification)
         self._load_datasets(self.dataset_names_regression)
+        self._load_datasets(self.dataset_names_classification)
 
         for dataset_name in self.dataset_names_classification + self.dataset_names_regression:
+
+            if "rruff" in dataset_name.lower() or "knowitall" in dataset_name.lower():
+                logger.info("Skipping RRUFF dataset due inconsistencies in data loading. TODO")  # TODO
+                continue
+
             for target_idx in range(self._index[dataset_name]):
                 self._key_list.append(self.get_key(dataset_name, target_idx))
                 self._task_type_list.append(TASK_TYPE.Classification if dataset_name in self.dataset_names_classification else TASK_TYPE.Regression)
@@ -293,12 +298,18 @@ class RamanBenchmark:
     def _load_datasets(self, dataset_names:List[str]):
 
         for dataset_name in tqdm(dataset_names, desc=f"Loading datasets"):
+
+            if "rruff" in dataset_name.lower() or "knowitall" in dataset_name.lower():
+                logger.info("Skipping RRUFF dataset due inconsistencies in data loading. TODO")  # TODO
+                continue
+
             if dataset_name in self._index:
                 num_targets = self._index[dataset_name]
             else:
                 dataset = raman_data(dataset_name)
                 num_targets = dataset.targets.shape[1] if dataset.targets.ndim > 1 else 1
                 self._index[dataset_name] = num_targets
+                self._save__index()
 
             for target_idx in range(num_targets):
                 key = self.get_key(dataset_name, target_idx)
