@@ -25,18 +25,22 @@ def compute_metrics_from_predictions(config):
 
     benchmark = configure_benchmark(config)
 
-    model_configs = config["model_configs"]
+    model_configs = config["models"]
     pbar = tqdm(total=len(benchmark) * len(model_configs))
 
     classification_output = []
     regression_output = []
 
     for data_train, data_test, key, task_type in benchmark:
-        for model_config in model_configs:
-            model_name = model_config["name"]
+        for model_name in model_configs:
             pbar.set_description(f"{key} | {model_name}")
 
             filename = f"{key}_{model_name}_predictions.csv"
+
+            if not os.path.exists(os.path.join(predictions_dir, filename)):
+                logger.warning(f"Predictions file not found for {key} and model {model_name}. Skipping.")
+                continue
+
             y_pred = pd.read_csv(os.path.join(predictions_dir, filename), index_col=0)
 
             data_test = data_test.sort_index()
@@ -46,6 +50,7 @@ def compute_metrics_from_predictions(config):
                 raise ValueError(f"Indices of true values and predictions do not match for {key} and model {model_name}.")
 
             dataset_name, target_idx, = benchmark.split_key(key)
+
             output_dict = {
                 "key": key,
                 "dataset": dataset_name,
