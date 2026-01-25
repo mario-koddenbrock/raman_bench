@@ -12,6 +12,7 @@ from tqdm import tqdm
 from raman_bench.benchmark import configure_benchmark
 from raman_bench.metrics import compute_metrics
 from raman_data import TASK_TYPE
+from raman_data.datasets import pretty_name
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +54,7 @@ def compute_metrics_from_predictions(config):
 
             output_dict = {
                 "key": key,
-                "dataset": dataset_name,
+                "dataset": pretty_name(dataset_name),
                 "task_type": task_type,
                 "target_idx": target_idx,
                 "model": model_name,
