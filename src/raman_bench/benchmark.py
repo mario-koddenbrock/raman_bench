@@ -299,10 +299,6 @@ class RamanBenchmark:
 
         for dataset_name in tqdm(dataset_names, desc=f"Loading datasets"):
 
-            if "rruff" in dataset_name.lower() or "knowitall" in dataset_name.lower():
-                logger.info("Skipping RRUFF dataset due inconsistencies in data loading. TODO")  # TODO
-                continue
-
             if dataset_name in self._index:
                 num_targets = self._index[dataset_name]
             else:
