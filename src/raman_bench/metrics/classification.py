@@ -101,12 +101,12 @@ class ClassificationMetrics:
             # Binary classification
             if y_proba.ndim == 2:
                 y_proba = y_proba[:, 1]
-            return roc_auc_score(y_true, y_proba)
+            return float(roc_auc_score(y_true, y_proba))
         else:
             # Multi-class classification
             lb = LabelBinarizer()
             y_true_bin = lb.fit_transform(y_true)
-            return roc_auc_score(y_true_bin, y_proba, multi_class=multi_class, average=self.average)
+            return float(roc_auc_score(y_true_bin, y_proba, multi_class=multi_class, average=self.average))
 
     def confusion_matrix(
         self,
