@@ -4,9 +4,11 @@ Regression metrics for Raman Bench.
 Provides comprehensive evaluation metrics for regression tasks.
 """
 
-from typing import Dict, Optional
+from typing import Dict
 
 import numpy as np
+from sklearn.metrics import mean_squared_error, explained_variance_score, max_error, median_absolute_error, r2_score, \
+    mean_absolute_error
 
 
 class RegressionMetrics:
@@ -50,25 +52,19 @@ class RegressionMetrics:
 
     def mse(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
         """Compute Mean Squared Error."""
-        from sklearn.metrics import mean_squared_error
-
-        return mean_squared_error(y_true, y_pred)
+        return float(mean_squared_error(y_true, y_pred))
 
     def rmse(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
         """Compute Root Mean Squared Error."""
-        return np.sqrt(self.mse(y_true, y_pred))
+        return float(np.sqrt(self.mse(y_true, y_pred)))
 
     def mae(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
         """Compute Mean Absolute Error."""
-        from sklearn.metrics import mean_absolute_error
-
-        return mean_absolute_error(y_true, y_pred)
+        return float(mean_absolute_error(y_true, y_pred))
 
     def r2(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
         """Compute R² (coefficient of determination)."""
-        from sklearn.metrics import r2_score
-
-        return r2_score(y_true, y_pred)
+        return float(r2_score(y_true, y_pred))
 
     def mape(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
         """
@@ -84,25 +80,19 @@ class RegressionMetrics:
         if not mask.any():
             return 0.0
 
-        return np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100
+        return float(np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100)
 
     def explained_variance(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
         """Compute Explained Variance Score."""
-        from sklearn.metrics import explained_variance_score
-
-        return explained_variance_score(y_true, y_pred)
+        return float(explained_variance_score(y_true, y_pred))
 
     def max_error(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
         """Compute Maximum Error."""
-        from sklearn.metrics import max_error
-
-        return max_error(y_true, y_pred)
+        return float(max_error(y_true, y_pred))
 
     def median_ae(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
         """Compute Median Absolute Error."""
-        from sklearn.metrics import median_absolute_error
-
-        return median_absolute_error(y_true, y_pred)
+        return float(median_absolute_error(y_true, y_pred))
 
     def huber_loss(
         self,
@@ -130,7 +120,7 @@ class RegressionMetrics:
             delta * residual - 0.5 * delta ** 2,
         )
 
-        return np.mean(loss)
+        return float(np.mean(loss))
 
     def adjusted_r2(
         self,
@@ -156,7 +146,7 @@ class RegressionMetrics:
             return r2
 
         adjusted = 1 - (1 - r2) * (n_samples - 1) / (n_samples - n_features - 1)
-        return adjusted
+        return float(adjusted)
 
     def get_residuals(
         self,
