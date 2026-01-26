@@ -41,10 +41,8 @@ fi
 # Print the Python executable path for debugging
 which python
 
-# Run the CellposeSAM finetuning script
-export NCCL_DEBUG=INFO
-export PYTHONFAULTHANDLER=1
-torchrun --nproc_per_node=2 --nnodes=1 scripts/finetuning/finetune_cellposesam.py --dataset_dir /scratch/koddenbrock/mt/SynMT/synthetic/full
+# Run the benchmark script
+python -m raman_bench.scripts.run_benchmark --config raman_bench/config
 
 # Log completion time
 echo "Job finished at $(date)"
