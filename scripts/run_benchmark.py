@@ -39,7 +39,7 @@ def main():
     parser.add_argument(
         "--config",
         type=str,
-        default="configs/minimal.json",
+        default="configs/debug.json",
         help="Path to configuration YAML file (default: configs/minimal.json)",
     )
     parser.add_argument(
