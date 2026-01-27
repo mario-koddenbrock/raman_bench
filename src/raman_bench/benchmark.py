@@ -118,6 +118,10 @@ class RamanBenchmark:
             cache_dir: str = ".cache",
     ):
 
+        self.cache_dir = cache_dir
+        os.makedirs(cache_dir, exist_ok=True)
+        logger.info(f"RamanBenchmark cache dir: {cache_dir}")
+
         self.n_classification = n_classification
         self.n_regression = n_regression
         logger.info(f"Datasets: {n_classification} classification, {n_regression} regression")
@@ -126,7 +130,7 @@ class RamanBenchmark:
         self.random_state = random_state
 
         self.dataset_names_classification = []
-        all_classification = raman_data(task_type=TASK_TYPE.Classification)
+        all_classification = raman_data(task_type=TASK_TYPE.Classification, cache_dir=self.cache_dir)
         if n_classification == -1:
             self.dataset_names_classification = all_classification
         elif n_classification > 0:
@@ -141,10 +145,7 @@ class RamanBenchmark:
 
         self.preprocessing = preprocessing
         self.preprocessing_pipeline = get_preprocessing_pipeline()
-
         self.augmentation = augmentation
-        self.cache_dir = cache_dir
-        os.makedirs(cache_dir, exist_ok=True)
 
         self._key_list = []
         self._task_type_list = []
@@ -269,7 +270,7 @@ class RamanBenchmark:
         (train_df, test_df)
         """
         dataset_name, target_idx = self.split_key(key)
-        dataset = raman_data(dataset_name)
+        dataset = raman_data(dataset_name, cache_dir=self.cache_dir)
 
         # TODO Data augmentation
         if self.augmentation:
@@ -352,7 +353,9 @@ class RamanBenchmark:
         _index file does not exist an empty dict is returned.
         """
         if not os.path.exists(self._index_file):
+            logger.info(f"Index file not found: {self._index_file}")
             return dict()
+        logger.info(f"Loading index from {self._index_file}")
         with open(self._index_file, "r") as f:
             index = json.load(f)
         return index
