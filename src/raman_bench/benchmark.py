@@ -44,7 +44,7 @@ def configure_benchmark(config):
     return benchmark
 
 class RamanBenchmark:
-    """Manage dataset loading, preprocessing, caching and iteration for the benchmark.
+    """Manage dataset loading, preprocessing, caching, and iteration for the benchmark.
 
     The `RamanBenchmark` class provides an iterator-like container of prepared
     train/test splits for datasets sourced from the `raman_data` package. It
@@ -165,7 +165,7 @@ class RamanBenchmark:
 
         The _index corresponds to entries in ``self._key_list``. If the dataset
         split has been cached on disk it is loaded from the cache; otherwise it
-        will be prepared on-the-fly, saved to cache and returned.
+        will be prepared on-the-fly, saved to cache, and returned.
 
         Parameters
         ----------
