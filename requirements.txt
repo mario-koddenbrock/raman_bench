@@ -10,6 +10,7 @@ pyyaml>=6.0,<7.0
 
 # Raman-specific packages
 ramanspy>=0.2.0,<0.3.0
+raman_data
 
 # Machine Learning frameworks
 torch>=2.0,<3.0
