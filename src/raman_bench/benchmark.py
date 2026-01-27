@@ -126,18 +126,17 @@ class RamanBenchmark:
         self.random_state = random_state
 
         self.dataset_names_classification = []
+        all_classification = raman_data(task_type=TASK_TYPE.Classification)
         if n_classification == -1:
-            self.dataset_names_classification = raman_data(task_type=TASK_TYPE.Classification)
+            self.dataset_names_classification = all_classification
         elif n_classification > 0:
-            all_classification = raman_data(task_type=TASK_TYPE.Classification)
             self.dataset_names_classification = all_classification[:n_classification]
-            # self.dataset_names_classification = [all_classification[-1]] # TODO
 
         self.dataset_names_regression = []
+        all_regression = raman_data(task_type=TASK_TYPE.Regression, cache_dir=self.cache_dir)
         if n_regression == -1:
-            self.dataset_names_regression = raman_data(task_type=TASK_TYPE.Regression)
+            self.dataset_names_regression = all_regression
         elif n_regression > 0:
-            all_regression = raman_data(task_type=TASK_TYPE.Regression)
             self.dataset_names_regression = all_regression[:n_regression]
 
         self.preprocessing = preprocessing
@@ -297,12 +296,16 @@ class RamanBenchmark:
 
     def _load_datasets(self, dataset_names:List[str]):
 
+        # iterate over all datasets
         for dataset_name in tqdm(dataset_names, desc=f"Loading datasets"):
 
+            # to iterate over the single targets, we need to know the number of targets
+            # if the dataset is in index, use the cached version
             if dataset_name in self._index:
                 num_targets = self._index[dataset_name]
             else:
-                dataset = raman_data(dataset_name)
+                # else load dataset and add to index
+                dataset = raman_data(dataset_name, cache_dir=self.cache_dir)
                 num_targets = dataset.targets.shape[1] if dataset.targets.ndim > 1 else 1
                 self._index[dataset_name] = num_targets
                 self._save__index()
@@ -325,6 +328,7 @@ class RamanBenchmark:
         """
         dataset_name = dataset_name.replace("/", "_").replace("\\", "_")
         return f"{dataset_name}_{target_idx}"
+
 
     @staticmethod
     def split_key(key: str) -> Tuple[str, int]:
